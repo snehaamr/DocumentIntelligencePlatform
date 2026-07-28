@@ -33,35 +33,39 @@ class DocumentService:
             document_id
         )
 
-        document.status = "PROCESSING"
-
-        self.repository.save(document)
-
-
         try:
 
-            # Extract text from file
+            #
+            # Step 1: Extraction
+            #
+            document.status = "EXTRACTING"
+            self.repository.save(document)
+
             extracted_text = (
                 self.extraction_service.extract(
                     document.uploaded_file.path
                 )
             )
 
+            document.extracted_text = extracted_text
+            self.repository.save(document)
 
-            # Call AI
+            #
+            # Step 2: AI Analysis
+            #
+            document.status = "ANALYZING"
+            self.repository.save(document)
+
             ai_result = (
                 self.ai_document_service.analyze(
                     extracted_text
                 )
             )
 
-
-            # Save extracted data
-            document.extracted_text = extracted_text
-
-            document.ai_response = (
-                ai_result.model_dump()
-            )
+            #
+            # Step 3: Persist AI Results
+            #
+            document.ai_response = ai_result.model_dump()
 
             document.document_type = (
                 ai_result.document_type
@@ -75,14 +79,19 @@ class DocumentService:
                 ai_result.confidence_score
             )
 
-            document.status = "PROCESSED"
+            #
+            # Future structured metadata
+            #
+            document.metadata = {}
 
+            #
+            # Final Status
+            #
+            document.status = "PROCESSED"
 
             self.repository.save(document)
 
-
             return document
-
 
         except Exception as e:
 
@@ -92,4 +101,4 @@ class DocumentService:
 
             self.repository.save(document)
 
-            raise e
+            raise

@@ -7,7 +7,8 @@ class Document(models.Model):
 
     STATUS_CHOICES = [
         ("UPLOADED", "UPLOADED"),
-        ("PROCESSING", "PROCESSING"),
+        ("EXTRACTING", "EXTRACTING"),
+        ("ANALYZING", "ANALYZING"),
         ("PROCESSED", "PROCESSED"),
         ("FAILED", "FAILED"),
     ]
@@ -42,7 +43,14 @@ class Document(models.Model):
         blank=True
     )
 
+    # Raw response returned from AI service
     ai_response = models.JSONField(
+        null=True,
+        blank=True
+    )
+
+    # Structured metadata extracted from document
+    metadata = models.JSONField(
         null=True,
         blank=True
     )
