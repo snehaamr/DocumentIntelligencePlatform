@@ -1,0 +1,5 @@
+Invoice Number: INV-1001
+
+Vendor: ABC Supplies
+
+Amount: $500
