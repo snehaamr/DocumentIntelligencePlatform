@@ -5,22 +5,19 @@ from celery import Celery
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "config.settings.dev"
+    "config.settings"
 )
-
 
 
 app = Celery(
-    "document_ai"
+    "document_platform"
 )
-
 
 
 app.config_from_object(
     "django.conf:settings",
     namespace="CELERY"
 )
-
 
 
 app.autodiscover_tasks()

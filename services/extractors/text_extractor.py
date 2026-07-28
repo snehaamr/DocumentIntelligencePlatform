@@ -1,9 +1,7 @@
-from services.extractors.base import DocumentExtractor
+class TextExtractor:
 
 
-class TextExtractor(DocumentExtractor):
-
-    def extract(self, file_path: str) -> str:
+    def extract(self, file_path):
 
         with open(
             file_path,

@@ -145,3 +145,7 @@ OPENAI_MODEL = os.getenv(
     "OPENAI_MODEL",
     "gpt-4.1-mini"
 )
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"

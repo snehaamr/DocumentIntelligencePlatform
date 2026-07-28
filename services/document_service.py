@@ -33,15 +33,14 @@ class DocumentService:
             document_id
         )
 
-
-        # 1. Update status
         document.status = "PROCESSING"
-        document.save()
+
+        self.repository.save(document)
 
 
         try:
 
-            # 2. Extract text
+            # Extract text from file
             extracted_text = (
                 self.extraction_service.extract(
                     document.uploaded_file.path
@@ -49,7 +48,7 @@ class DocumentService:
             )
 
 
-            # 3. AI Analysis
+            # Call AI
             ai_result = (
                 self.ai_document_service.analyze(
                     extracted_text
@@ -57,8 +56,7 @@ class DocumentService:
             )
 
 
-            # 4. Persist results
-
+            # Save extracted data
             document.extracted_text = extracted_text
 
             document.ai_response = (
@@ -79,7 +77,8 @@ class DocumentService:
 
             document.status = "PROCESSED"
 
-            document.save()
+
+            self.repository.save(document)
 
 
             return document
@@ -91,6 +90,6 @@ class DocumentService:
 
             document.error_message = str(e)
 
-            document.save()
+            self.repository.save(document)
 
             raise e

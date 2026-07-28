@@ -12,7 +12,10 @@ class ExtractorFactory:
     @staticmethod
     def get_extractor(file_path):
 
-        extension = Path(file_path).suffix.lower()
+        extension = (
+            os.path.splitext(file_path)[1]
+            .lower()
+        )
 
 
         if extension == ".pdf":
@@ -23,10 +26,10 @@ class ExtractorFactory:
             return DOCXExtractor()
 
 
-        if extension == ".txt":
+        if extension in [".txt", ".text"]:
             return TextExtractor()
 
 
-        raise Exception(
-            f"Unsupported file type {extension}"
+        raise ValueError(
+            f"Unsupported file type: {extension}"
         )

@@ -1,17 +1,26 @@
-from pypdf import PdfReader
-
-from services.extractors.base import DocumentExtractor
+import PyPDF2
 
 
-class PDFExtractor(DocumentExtractor):
 
-    def extract(self, file_path: str) -> str:
+class PDFExtractor:
 
-        reader = PdfReader(file_path)
+
+    def extract(self, file_path):
 
         text = ""
 
-        for page in reader.pages:
-            text += page.extract_text() or ""
+        with open(
+            file_path,
+            "rb"
+        ) as file:
+
+            reader = PyPDF2.PdfReader(file)
+
+            for page in reader.pages:
+                text += (
+                    page.extract_text()
+                    or ""
+                )
+
 
         return text

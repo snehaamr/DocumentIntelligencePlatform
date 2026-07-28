@@ -1,24 +1,16 @@
-from django.db import models
 import uuid
+
+from django.db import models
 
 
 class Document(models.Model):
 
     STATUS_CHOICES = [
-        ("UPLOADED", "Uploaded"),
-        ("PROCESSING", "Processing"),
-        ("PROCESSED", "Processed"),
-        ("FAILED", "Failed"),
+        ("UPLOADED", "UPLOADED"),
+        ("PROCESSING", "PROCESSING"),
+        ("PROCESSED", "PROCESSED"),
+        ("FAILED", "FAILED"),
     ]
-
-    DOCUMENT_TYPES = [
-        ("INVOICE", "Invoice"),
-        ("CONTRACT", "Contract"),
-        ("RECEIPT", "Receipt"),
-        ("PURCHASE_ORDER", "Purchase Order"),
-        ("OTHER", "Other"),
-    ]
-
 
     id = models.UUIDField(
         primary_key=True,
@@ -26,74 +18,65 @@ class Document(models.Model):
         editable=False
     )
 
-
-    # Original uploaded file
-    file = models.FileField(
-        upload_to="documents/"
-    )
-
-
-    # Original filename for display
-    filename = models.CharField(
+    original_filename = models.CharField(
         max_length=255
     )
 
+    uploaded_file = models.FileField(
+        upload_to="documents/"
+    )
 
-    # Processing lifecycle
+    mime_type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    file_size = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    extracted_text = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    ai_response = models.JSONField(
+        null=True,
+        blank=True
+    )
+
+    document_type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    summary = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    confidence_score = models.FloatField(
+        null=True,
+        blank=True
+    )
+
     status = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=STATUS_CHOICES,
         default="UPLOADED"
     )
 
-
-    # Extracted raw text from PDF/DOCX/TXT
-    extracted_text = models.TextField(
-        blank=True,
-        null=True
-    )
-
-
-    # AI generated structured response
-    ai_response = models.JSONField(
-        blank=True,
-        null=True
-    )
-
-
-    # AI extracted metadata
-    document_type = models.CharField(
-        max_length=100,
-        choices=DOCUMENT_TYPES,
-        blank=True,
-        null=True
-    )
-
-
-    summary = models.TextField(
-        blank=True,
-        null=True
-    )
-
-
-    confidence_score = models.FloatField(
-        blank=True,
-        null=True
-    )
-
-
-    # Error tracking
     error_message = models.TextField(
-        blank=True,
-        null=True
+        null=True,
+        blank=True
     )
 
-
-    # Audit fields
     created_at = models.DateTimeField(
         auto_now_add=True
     )
-
 
     updated_at = models.DateTimeField(
         auto_now=True
@@ -101,4 +84,4 @@ class Document(models.Model):
 
 
     def __str__(self):
-        return self.filename
+        return self.original_filename

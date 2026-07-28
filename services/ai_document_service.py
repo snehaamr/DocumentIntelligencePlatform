@@ -1,4 +1,9 @@
+from schemas.ai_document_schema import (
+    AIDocumentResponse
+)
+
 from services.ai_service import AIService
+
 
 
 class AIDocumentService:
@@ -10,8 +15,19 @@ class AIDocumentService:
 
 
 
-    def analyze(self, text):
+    def analyze(
+        self,
+        extracted_text
+    ) -> AIDocumentResponse:
 
-        return self.ai_service.analyze_document(
-            text
+
+        response = (
+            self.ai_service.analyze_document(
+                extracted_text
+            )
+        )
+
+
+        return AIDocumentResponse(
+            **response
         )

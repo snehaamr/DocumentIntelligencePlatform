@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from .models import Document
 
 
@@ -6,19 +7,19 @@ from .models import Document
 class DocumentAdmin(admin.ModelAdmin):
 
     list_display = (
-        "filename",
+        "original_filename",
+        "document_type",
         "status",
-        "document_type",
         "created_at",
-    )
-
-    search_fields = (
-        "filename",
-        "document_type",
     )
 
     list_filter = (
         "status",
+        "document_type",
+    )
+
+    search_fields = (
+        "original_filename",
         "document_type",
     )
 

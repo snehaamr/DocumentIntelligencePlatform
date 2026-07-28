@@ -1,59 +1,58 @@
-import json
+from django.conf import settings
 
 from openai import OpenAI
 
-from clients.ai_provider import AIProvider
 
 
-class OpenAIClient(AIProvider):
+class OpenAIClient:
+
 
     def __init__(self):
-        self.client = OpenAI()
 
-
-    def analyze(self, text: str):
-
-        response = self.client.chat.completions.create(
-
-            model=settings.OPENAI_MODEL,
-
-            response_format={
-                "type": "json_object"
-            },
-
-            messages=[
-                {
-                    "role": "system",
-                    "content": """
-You are an AI document intelligence system.
-
-Analyze the document and return JSON:
-
-{
- "document_type": "",
- "summary": "",
- "entities": {},
- "confidence_score": 0.0
-}
-
-Rules:
-- confidence_score must be between 0 and 1
-- extract important entities
-- keep summary concise
-"""
-                },
-                {
-                    "role": "user",
-                    "content": text
-                }
-            ]
+        self.client = OpenAI(
+            api_key=settings.OPENAI_API_KEY
         )
 
-        content = (
+
+
+    def analyze(
+        self,
+        prompt
+    ):
+
+
+        response = (
+            self.client.chat.completions.create(
+
+                model=settings.OPENAI_MODEL,
+
+                temperature=0,
+
+                response_format={
+                    "type": "json_object"
+                },
+
+                messages=[
+
+                    {
+                        "role": "system",
+                        "content":
+                        "You extract structured information from documents."
+                    },
+
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+
+                ]
+            )
+        )
+
+
+        return (
             response
             .choices[0]
             .message
             .content
         )
-
-        return json.loads(content)
