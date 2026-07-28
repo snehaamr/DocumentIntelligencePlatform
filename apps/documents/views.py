@@ -1,9 +1,9 @@
-from rest_framework import status
+from rest_framework import status, viewsets
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 from services.document_service import DocumentService
-from services.tasks import process_document_task
 
 from .serializers import (
     DocumentSerializer,
@@ -11,56 +11,61 @@ from .serializers import (
 )
 
 
-class DocumentUploadView(APIView):
+class DocumentViewSet(viewsets.ViewSet):
 
-    service = DocumentService()
+    parser_classes = [MultiPartParser]
 
-    def post(self, request):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.service = DocumentService()
 
-        serializer = DocumentUploadSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def create(self, request):
+
+        serializer = DocumentUploadSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
 
         document = self.service.upload_document(
             serializer.validated_data["file"]
         )
 
-        # This line is critical
-        process_document_task.delay(str(document.id))
-
         return Response(
-            {
-                "id": str(document.id),
-                "status": document.status,
-                "message": "Document uploaded and processing started",
-            },
+            DocumentSerializer(document).data,
             status=status.HTTP_201_CREATED,
         )
 
+    def retrieve(self, request, pk=None):
 
+        document = self.service.get_document(pk)
 
-class ProcessDocumentView(APIView):
+        serializer = DocumentSerializer(document)
 
-    def post(self, request, document_id):
+        return Response(serializer.data)
 
-        service = DocumentService()
+    def list(self, request):
 
-        document = service.process_document(
-            document_id
+        documents = self.service.list_documents(
+            status=request.query_params.get("status"),
+            document_type=request.query_params.get("document_type"),
+            search=request.query_params.get("search"),
         )
 
-        return Response({
+        paginator = PageNumberPagination()
 
-            "id": str(document.id),
+        page = paginator.paginate_queryset(
+            documents,
+            request,
+        )
 
-            "status": document.status,
+        serializer = DocumentSerializer(
+            page,
+            many=True,
+        )
 
-            "document_type":
-                document.document_type,
-
-            "summary":
-                document.summary,
-
-            "confidence":
-                document.confidence_score
-
-        })
+        return paginator.get_paginated_response(
+            serializer.data
+        )

@@ -1,24 +1,21 @@
+from django.urls import include
 from django.urls import path
 
-from .views import (
-    DocumentUploadView,
-    ProcessDocumentView,
+from rest_framework.routers import DefaultRouter
+
+from .views import DocumentViewSet
+
+router = DefaultRouter()
+
+router.register(
+    "",
+    DocumentViewSet,
+    basename="documents",
 )
 
-
 urlpatterns = [
-
     path(
-        "upload/",
-        DocumentUploadView.as_view(),
-        name="upload-document"
+        "",
+        include(router.urls),
     ),
-
-
-    path(
-        "<uuid:document_id>/process/",
-        ProcessDocumentView.as_view(),
-        name="process-document"
-    ),
-
 ]

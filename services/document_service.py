@@ -14,7 +14,6 @@ class DocumentService:
 
         self.ai_document_service = AIDocumentService()
 
-
     def upload_document(self, uploaded_file):
 
         document = self.repository.create(
@@ -26,20 +25,17 @@ class DocumentService:
 
         return document
 
-
     def process_document(self, document_id):
 
         document = self.repository.get_by_id(
             document_id
         )
 
-        try:
+        document.status = "PROCESSING"
 
-            #
-            # Step 1: Extraction
-            #
-            document.status = "EXTRACTING"
-            self.repository.save(document)
+        self.repository.save(document)
+
+        try:
 
             extracted_text = (
                 self.extraction_service.extract(
@@ -47,25 +43,17 @@ class DocumentService:
                 )
             )
 
-            document.extracted_text = extracted_text
-            self.repository.save(document)
-
-            #
-            # Step 2: AI Analysis
-            #
-            document.status = "ANALYZING"
-            self.repository.save(document)
-
             ai_result = (
                 self.ai_document_service.analyze(
                     extracted_text
                 )
             )
 
-            #
-            # Step 3: Persist AI Results
-            #
-            document.ai_response = ai_result.model_dump()
+            document.extracted_text = extracted_text
+
+            document.ai_response = (
+                ai_result.model_dump()
+            )
 
             document.document_type = (
                 ai_result.document_type
@@ -79,14 +67,6 @@ class DocumentService:
                 ai_result.confidence_score
             )
 
-            #
-            # Future structured metadata
-            #
-            document.metadata = {}
-
-            #
-            # Final Status
-            #
             document.status = "PROCESSED"
 
             self.repository.save(document)
@@ -101,4 +81,26 @@ class DocumentService:
 
             self.repository.save(document)
 
-            raise
+            raise e
+
+    def get_document(
+        self,
+        document_id,
+    ):
+
+        return self.repository.get_by_id(
+            document_id
+        )
+
+    def list_documents(
+        self,
+        status=None,
+        document_type=None,
+        search=None,
+    ):
+
+        return self.repository.filter_documents(
+            status=status,
+            document_type=document_type,
+            search=search,
+        )
