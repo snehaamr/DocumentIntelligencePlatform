@@ -1,0 +1,25 @@
+                 AI Document Intelligence Platform
+
+                        Django REST API
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+     Document API         Search API         Feedback API
+          │                    │                    │
+          ▼                    ▼                    ▼
+   Document Service      Search Service     Feedback Service
+          │
+    ┌─────┴────────────────────────────┐
+    │                                  │
+    ▼                                  ▼
+Extraction Service               AI Service
+    │                                  │
+    ▼                                  ▼
+PDF/DOCX/TXT                  Provider Interface
+                                     │
+                        ┌────────────┴────────────┐
+                        ▼                         ▼
+                  OpenAI Provider         Bedrock Provider
+                                     │
+                                     ▼
+                               PostgreSQL
