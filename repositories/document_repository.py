@@ -43,6 +43,7 @@ class DocumentRepository:
         status=None,
         document_type=None,
         search=None,
+        min_confidence=None,
     ):
 
         queryset = Document.objects.all()
@@ -55,6 +56,11 @@ class DocumentRepository:
         if document_type:
             queryset = queryset.filter(
                 document_type=document_type
+            )
+
+        if min_confidence is not None:
+            queryset = queryset.filter(
+                confidence_score__gte=min_confidence
             )
 
         if search:

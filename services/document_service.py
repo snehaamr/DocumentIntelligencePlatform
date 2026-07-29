@@ -14,7 +14,10 @@ class DocumentService:
 
         self.ai_document_service = AIDocumentService()
 
-    def upload_document(self, uploaded_file):
+    def upload_document(
+        self,
+        uploaded_file,
+    ):
 
         document = self.repository.create(
             original_filename=uploaded_file.name,
@@ -25,7 +28,10 @@ class DocumentService:
 
         return document
 
-    def process_document(self, document_id):
+    def process_document(
+        self,
+        document_id,
+    ):
 
         document = self.repository.get_by_id(
             document_id
@@ -69,7 +75,9 @@ class DocumentService:
 
             document.status = "PROCESSED"
 
-            self.repository.save(document)
+            self.repository.save(
+                document
+            )
 
             return document
 
@@ -79,7 +87,9 @@ class DocumentService:
 
             document.error_message = str(e)
 
-            self.repository.save(document)
+            self.repository.save(
+                document
+            )
 
             raise e
 
@@ -97,10 +107,12 @@ class DocumentService:
         status=None,
         document_type=None,
         search=None,
+        min_confidence=None,
     ):
 
         return self.repository.filter_documents(
             status=status,
             document_type=document_type,
             search=search,
+            min_confidence=min_confidence,
         )

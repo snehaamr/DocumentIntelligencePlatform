@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Document(models.Model):
@@ -17,6 +18,12 @@ class Document(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         editable=False
+    )
+    
+    owner = models.ForeignKey(
+   	    User,
+        on_delete=models.CASCADE,
+        related_name="documents"
     )
 
     original_filename = models.CharField(

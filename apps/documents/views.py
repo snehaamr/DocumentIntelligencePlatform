@@ -1,7 +1,7 @@
 from rest_framework import status, viewsets
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
 
 from services.document_service import DocumentService
 
@@ -38,20 +38,49 @@ class DocumentViewSet(viewsets.ViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    def retrieve(self, request, pk=None):
+    def retrieve(
+        self,
+        request,
+        pk=None,
+    ):
 
-        document = self.service.get_document(pk)
+        document = self.service.get_document(
+            pk
+        )
 
-        serializer = DocumentSerializer(document)
+        serializer = DocumentSerializer(
+            document
+        )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data
+        )
 
-    def list(self, request):
+    def list(
+        self,
+        request,
+    ):
+
+        min_confidence = request.query_params.get(
+            "min_confidence"
+        )
+
+        if min_confidence:
+            min_confidence = float(
+                min_confidence
+            )
 
         documents = self.service.list_documents(
-            status=request.query_params.get("status"),
-            document_type=request.query_params.get("document_type"),
-            search=request.query_params.get("search"),
+            status=request.query_params.get(
+                "status"
+            ),
+            document_type=request.query_params.get(
+                "document_type"
+            ),
+            search=request.query_params.get(
+                "search"
+            ),
+            min_confidence=min_confidence,
         )
 
         paginator = PageNumberPagination()
