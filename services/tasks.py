@@ -1,18 +1,213 @@
-from celery import shared_task
+import logging
+from time import monotonic
 
+from celery import shared_task
+from django.utils import timezone
+
+from apps.documents.models import (
+    Document,
+    DocumentProcessingLog,
+)
 from services.document_service import DocumentService
 
 
-@shared_task
-def process_document_task(document_id):
+logger = logging.getLogger(__name__)
 
-    service = DocumentService()
 
-    document = service.process_document(
-        document_id
+@shared_task(
+    bind=True,
+    name="documents.process_document",
+)
+def process_document_task(
+    self,
+    document_id,
+):
+    """
+    Process one document asynchronously and record
+    the complete processing-attempt history.
+
+    A new DocumentProcessingLog row is created for every
+    task execution, including retries.
+    """
+
+    document = _get_document(
+        document_id=document_id,
     )
 
-    return {
-        "document_id": str(document.id),
-        "status": document.status
-    }
+    processing_log = _create_processing_log(
+        document=document,
+    )
+
+    start_time = monotonic()
+
+    try:
+        _mark_document_as_processing(
+            document=document,
+        )
+
+        service = DocumentService()
+
+        service.process_document(
+            document_id=document.id,
+        )
+
+        duration_ms = _calculate_duration_ms(
+            start_time=start_time,
+        )
+
+        _mark_processing_succeeded(
+            processing_log=processing_log,
+            duration_ms=duration_ms,
+        )
+
+        logger.info(
+            "Document processing succeeded. "
+            "document_id=%s task_id=%s duration_ms=%s",
+            document.id,
+            self.request.id,
+            duration_ms,
+        )
+
+        return {
+            "document_id": str(document.id),
+            "processing_log_id": str(processing_log.id),
+            "status": DocumentProcessingLog.Status.SUCCEEDED,
+            "duration_ms": duration_ms,
+        }
+
+    except Exception as exc:
+        duration_ms = _calculate_duration_ms(
+            start_time=start_time,
+        )
+
+        _mark_document_as_failed(
+            document=document,
+        )
+
+        _mark_processing_failed(
+            processing_log=processing_log,
+            duration_ms=duration_ms,
+            exception=exc,
+        )
+
+        logger.exception(
+            "Document processing failed. "
+            "document_id=%s task_id=%s duration_ms=%s",
+            document.id,
+            self.request.id,
+            duration_ms,
+        )
+
+        raise
+
+
+def _get_document(
+    document_id,
+):
+    try:
+        return Document.objects.get(
+            id=document_id,
+        )
+
+    except Document.DoesNotExist as exc:
+        logger.error(
+            "Document not found. document_id=%s",
+            document_id,
+        )
+
+        raise ValueError(
+            f"Document with ID {document_id} does not exist."
+        ) from exc
+
+
+def _create_processing_log(
+    document,
+):
+    return DocumentProcessingLog.objects.create(
+        document=document,
+        status=DocumentProcessingLog.Status.STARTED,
+    )
+
+
+def _mark_document_as_processing(
+    document,
+):
+    document.status = "PROCESSING"
+
+    document.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ],
+    )
+
+
+def _mark_document_as_failed(
+    document,
+):
+    document.status = "FAILED"
+
+    document.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ],
+    )
+
+
+def _mark_processing_succeeded(
+    processing_log,
+    duration_ms,
+):
+    processing_log.status = (
+        DocumentProcessingLog.Status.SUCCEEDED
+    )
+
+    processing_log.completed_at = timezone.now()
+    processing_log.duration_ms = duration_ms
+    processing_log.error_message = ""
+
+    processing_log.save(
+        update_fields=[
+            "status",
+            "completed_at",
+            "duration_ms",
+            "error_message",
+            "updated_at",
+        ],
+    )
+
+
+def _mark_processing_failed(
+    processing_log,
+    duration_ms,
+    exception,
+):
+    processing_log.status = (
+        DocumentProcessingLog.Status.FAILED
+    )
+
+    processing_log.completed_at = timezone.now()
+    processing_log.duration_ms = duration_ms
+    processing_log.error_message = str(exception)
+
+    processing_log.save(
+        update_fields=[
+            "status",
+            "completed_at",
+            "duration_ms",
+            "error_message",
+            "updated_at",
+        ],
+    )
+
+
+def _calculate_duration_ms(
+    start_time,
+):
+    elapsed_seconds = monotonic() - start_time
+
+    return max(
+        0,
+        round(elapsed_seconds * 1000),
+    )

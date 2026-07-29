@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+
 class Document(models.Model):
 
     STATUS_CHOICES = [
@@ -100,3 +101,97 @@ class Document(models.Model):
 
     def __str__(self):
         return self.original_filename
+        
+class DocumentProcessingLog(models.Model):
+
+    class Status(models.TextChoices):
+        STARTED = "STARTED", "Started"
+        SUCCEEDED = "SUCCEEDED", "Succeeded"
+        FAILED = "FAILED", "Failed"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="processing_logs",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.STARTED,
+    )
+
+    started_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    duration_ms = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    model_used = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    tokens_used = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "document_processing_logs"
+
+        ordering = [
+            "-started_at",
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "document",
+                    "status",
+                ],
+                name="doc_log_doc_status_idx",
+            ),
+            models.Index(
+                fields=[
+                    "status",
+                    "started_at",
+                ],
+                name="doc_log_status_time_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.document.original_filename} "
+            f"- {self.status} "
+            f"- {self.started_at}"
+        )        

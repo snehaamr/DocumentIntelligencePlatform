@@ -5,7 +5,7 @@ from django.core.management.base import (
 )
 
 from apps.documents.models import Document
-from services.tasks import process_document_task
+from apps.documents.tasks import process_document_task
 
 
 User = get_user_model()
