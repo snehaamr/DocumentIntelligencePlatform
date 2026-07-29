@@ -1,19 +1,17 @@
 from docx import Document
 
-from services.extractors.base import DocumentExtractor
 
 
-class DOCXExtractor(DocumentExtractor):
+class DOCXExtractor:
 
-    def extract(self, file_path: str) -> str:
+
+    def extract(self, file_path):
 
         document = Document(file_path)
 
-        paragraphs = []
-
-        for paragraph in document.paragraphs:
-            paragraphs.append(
-                paragraph.text
-            )
+        paragraphs = [
+            paragraph.text
+            for paragraph in document.paragraphs
+        ]
 
         return "\n".join(paragraphs)
