@@ -1,23 +1,21 @@
 from rest_framework import serializers
 
-from .models import Document
+from .models import (
+    Document,
+    DocumentProcessingLog,
+)
 
 
-class DocumentUploadSerializer(serializers.ModelSerializer):
+class DocumentUploadSerializer(
+    serializers.Serializer
+):
 
-    class Meta:
-
-        model = Document
-
-        fields = [
-            "original_filename",
-            "uploaded_file",
-            "mime_type",
-            "file_size",
-        ]
+    file = serializers.FileField()
 
 
-class DocumentSerializer(serializers.ModelSerializer):
+class DocumentSerializer(
+    serializers.ModelSerializer
+):
 
     class Meta:
 
@@ -40,3 +38,27 @@ class DocumentSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+        read_only_fields = fields
+
+
+class DocumentProcessingLogSerializer(
+    serializers.ModelSerializer
+):
+
+    class Meta:
+
+        model = DocumentProcessingLog
+
+        fields = [
+            "id",
+            "status",
+            "started_at",
+            "completed_at",
+            "duration_ms",
+            "model_used",
+            "tokens_used",
+            "error_message",
+        ]
+
+        read_only_fields = fields

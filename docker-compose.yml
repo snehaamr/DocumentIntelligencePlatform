@@ -1,91 +1,104 @@
-version: "3.9"
-
 services:
 
-  postgres:
-    image: postgres:16
-    container_name: ai_postgres
+  db:
+    image: postgres:17
 
     environment:
-      POSTGRES_DB: ai_documents
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: document_platform
+      POSTGRES_USER: document_user
+      POSTGRES_PASSWORD: document_password
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U document_user -d document_platform"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
 
-    container_name: ai_redis
-
-    ports:
-      - "6379:6379"
-
-
-
-  backend:
-
-    build:
-      context: ./backend
-
-    container_name: ai_backend
-
     command:
-      python manage.py runserver 0.0.0.0:8000
+      [
+        "redis-server",
+        "--appendonly",
+        "yes"
+      ]
 
     volumes:
-      - ./backend:/app
+      - redis_data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+
+    command:
+      >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
 
     ports:
       - "8000:8000"
 
+    env_file:
+      - .env
 
     environment:
-
-      DATABASE_NAME: ai_documents
-      DATABASE_USER: admin
-      DATABASE_PASSWORD: password
-      DATABASE_HOST: postgres
-
-      REDIS_HOST: redis
-
-
-    depends_on:
-      - postgres
-      - redis
-
-
-
-  celery:
-
-    build:
-      context: ./backend
-
-
-    command:
-
-      celery -A config worker --loglevel=info
-
+      USE_POSTGRES: "True"
 
     volumes:
-      - ./backend:/app
-
-
-    environment:
-
-      REDIS_HOST: redis
-
+      - .:/app
+      - media_data:/app/media
 
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
+  celery:
+    build:
+      context: .
 
+    command:
+      celery -A config worker --loglevel=info
+
+    env_file:
+      - .env
+
+    environment:
+      USE_POSTGRES: "True"
+
+    volumes:
+      - .:/app
+      - media_data:/app/media
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
-
   postgres_data:
+  redis_data:
+  media_data:
