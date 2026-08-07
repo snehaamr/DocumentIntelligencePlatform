@@ -1,38 +1,50 @@
-# 📄 Document Intelligence Platform
+# 📄 AI Document Intelligence Platform
 
-An AI-powered document processing platform built with **Django**, **Django REST Framework**, **Celery**, **Redis**, and **OpenAI**. The platform allows authenticated users to upload documents, automatically extracts text, leverages Large Language Models (LLMs) to classify and summarize content, and provides asynchronous processing with complete execution history.
+An AI-powered document processing platform built with **Django**, **Django REST Framework**, **Celery**, **Redis**, **PostgreSQL**, **Docker**, and **OpenAI**.
 
-The project is designed using production-oriented software engineering principles including layered architecture, asynchronous processing, repository and service patterns, transactional consistency, and robust error handling.
+The platform allows authenticated users to upload documents, extract text, leverage Large Language Models (LLMs) to classify and summarize content, and process documents asynchronously using background workers.
+
+The project follows production-oriented backend engineering practices including layered architecture, repository and service patterns, transactional consistency, asynchronous processing, containerized deployment, automated testing, and robust error handling.
 
 ---
 
 # Features
 
-### Authentication
+## Authentication
 
 * JWT-based authentication
 * User registration and login
-* Secure access to all document endpoints
+* Access token refresh
 * User-specific document ownership
+* Protected API endpoints
 
 ---
 
-### Document Upload
+## Document Upload
 
-* Upload PDF, image, or text documents
-* Stores original document metadata
-* Tracks file size, MIME type, upload timestamp, and owner
+Users can upload PDF, image, or text documents.
+
+Each uploaded document stores:
+
+* Original filename
+* MIME type
+* File size
+* Upload timestamp
+* Processing status
+* Owner
 
 ---
 
-### AI Document Processing
+## AI Document Processing
 
 After upload, documents are processed asynchronously.
 
 Processing pipeline:
 
-```
+```text
 Upload
+    ↓
+Queue Celery Task
     ↓
 Text Extraction
     ↓
@@ -52,25 +64,26 @@ The AI extracts structured information including:
 * Document type
 * Summary
 * Confidence score
-* Raw AI response
+* Structured AI response
 
 ---
 
-### Asynchronous Processing
+## Asynchronous Processing
 
-Document processing is performed using **Celery** workers.
+Document processing is executed using **Celery** workers with **Redis** as the message broker.
 
 Benefits include:
 
 * Non-blocking uploads
-* Improved API responsiveness
-* Better scalability
-* Retry support
-* Separation of API and background processing
+* Faster API responses
+* Horizontal scalability
+* Fault isolation
+* Automatic retry capability
+* Separation of API and background workloads
 
 ---
 
-### Processing History
+## Processing History
 
 Every processing attempt is recorded.
 
@@ -80,19 +93,21 @@ Each execution stores:
 * Start time
 * Completion time
 * Processing duration
-* Error message (if any)
+* Error message
+* Model used
+* Token usage (when available)
 
 This provides complete auditability of document processing.
 
 ---
 
-### Retry Failed Processing
+## Retry Failed Processing
 
-Failed processing jobs can be retried without uploading the document again.
+Failed document processing can be retried without uploading the document again.
 
-The retry flow:
+Retry workflow:
 
-```
+```text
 FAILED
     ↓
 Retry Endpoint
@@ -112,85 +127,80 @@ Retries are only allowed for failed documents.
 
 The implementation uses:
 
-* database transactions
-* row-level locking (`select_for_update`)
+* `transaction.atomic()`
+* `select_for_update()`
 * `transaction.on_commit()`
 
 to prevent duplicate processing and race conditions.
 
 ---
 
-### Search and Filtering
+## Search and Filtering
 
 Documents can be filtered by:
 
-* processing status
-* document type
-* confidence score
-* filename
-* summary text
+* Processing status
+* Document type
+* Confidence score
+* Filename
+* Summary text
 
-Pagination is supported for efficient retrieval.
+Results are paginated for efficient retrieval.
 
 ---
 
 # Architecture
 
-The project follows a layered architecture.
+The project follows a layered architecture that separates API logic, business logic, persistence, and background processing.
 
-```
-               Client
-
-                  │
-                  ▼
-
-        Django REST ViewSets
-
-                  │
-                  ▼
-
-        Service Layer (Business Logic)
-
-                  │
-                  ▼
-
-        Repository Layer (Database)
-
-                  │
-                  ▼
-
-             PostgreSQL / SQLite
-
-                  ▲
-                  │
-
-          Celery Background Worker
-
-                  │
-                  ▼
-
-       OCR / Text Extraction Service
-
-                  │
-                  ▼
-
-             OpenAI API
+```text
+                     Client
+                        │
+                        ▼
+             Django REST Framework
+                        │
+                JWT Authentication
+                        │
+                        ▼
+               Service Layer
+              (Business Logic)
+                        │
+                        ▼
+             Repository Layer
+             (Database Access)
+                        │
+                        ▼
+            PostgreSQL / SQLite
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                               ▼
+ Processing Logs                  Celery Queue
+                                          │
+                                          ▼
+                                   Redis Broker
+                                          │
+                                          ▼
+                                    Celery Worker
+                                          │
+                                          ▼
+                                  Text Extraction
+                                          │
+                                          ▼
+                                      OpenAI API
 ```
 
 ---
 
 # Project Structure
 
-```
+```text
 DocumentIntelligencePlatform/
 
 ├── apps/
-│   └── documents/
-│       ├── models.py
-│       ├── serializers.py
-│       ├── views.py
-│       ├── urls.py
-│       └── tasks.py
+│   ├── documents/
+│   ├── users/
+│   ├── feedback/
+│   └── ai_engine/
 │
 ├── repositories/
 │   └── document_repository.py
@@ -199,12 +209,15 @@ DocumentIntelligencePlatform/
 │   ├── document_service.py
 │   ├── extraction_service.py
 │   ├── ai_document_service.py
-│   └── exceptions.py
+│   └── tasks.py
 │
 ├── config/
 │
 ├── media/
 │
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
 └── manage.py
 ```
 
@@ -214,14 +227,14 @@ DocumentIntelligencePlatform/
 
 ## Backend
 
-* Python
-* Django
+* Python 3.13
+* Django 6
 * Django REST Framework
 
 ## Database
 
-* SQLite (development)
-* PostgreSQL (planned for production)
+* SQLite (local development)
+* PostgreSQL (Docker deployment)
 
 ## Authentication
 
@@ -234,11 +247,17 @@ DocumentIntelligencePlatform/
 
 ## AI
 
-* OpenAI API
+* OpenAI Chat Completions API
+* Pydantic
 
-## OCR / Text Extraction
+## Infrastructure
 
-* PDF and image text extraction services
+* Docker
+* Docker Compose
+
+## Testing
+
+* Django Test Framework
 
 ---
 
@@ -246,27 +265,29 @@ DocumentIntelligencePlatform/
 
 ## Authentication
 
-```
+```text
 POST /api/auth/register/
 POST /api/auth/login/
+POST /api/auth/refresh/
 ```
 
 ---
 
 ## Documents
 
-```
-POST   /api/documents/
-GET    /api/documents/
-GET    /api/documents/{id}/
-POST   /api/documents/{id}/retry/
+```text
+POST /api/documents/
+GET  /api/documents/
+GET  /api/documents/{id}/
+POST /api/documents/{id}/retry/
+GET  /api/documents/{id}/history/
 ```
 
 ---
 
 # Processing Lifecycle
 
-```
+```text
 UPLOADED
       │
       ▼
@@ -283,7 +304,105 @@ PROCESSED ◄─────────────────┘
 
 ---
 
+# Running Locally
+
+Create a virtual environment.
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+Run database migrations.
+
+```bash
+python manage.py migrate
+```
+
+Start Redis.
+
+```bash
+redis-server
+```
+
+Start Celery.
+
+```bash
+celery -A config worker --loglevel=info
+```
+
+Run Django.
+
+```bash
+python manage.py runserver
+```
+
+---
+
+# Running with Docker
+
+Build the containers.
+
+```bash
+docker compose build
+```
+
+Start the complete application.
+
+```bash
+docker compose up
+```
+
+The following services start automatically:
+
+* Django
+* PostgreSQL
+* Redis
+* Celery Worker
+
+---
+
+# Running Tests
+
+Run the complete test suite locally.
+
+```bash
+python manage.py test apps.documents.tests
+```
+
+Run tests inside Docker.
+
+```bash
+docker compose exec web python manage.py test apps.documents.tests
+```
+
+Current automated coverage includes:
+
+* Repository layer
+* Service layer
+* API endpoints
+* Authentication
+* Authorization
+* Retry workflow
+* Processing history
+
+**22 automated tests**
+
+---
+
 # Design Decisions
+
+## Layered Architecture
+
+The application separates presentation, business logic, persistence, and background processing into independent layers. This improves maintainability, testability, and separation of concerns.
+
+---
 
 ## Repository Pattern
 
@@ -291,10 +410,10 @@ All database operations are isolated from business logic.
 
 Advantages:
 
-* cleaner services
-* easier unit testing
-* centralized data access
-* separation of concerns
+* Centralized data access
+* Easier testing
+* Cleaner services
+* Better maintainability
 
 ---
 
@@ -304,24 +423,25 @@ Business logic is separated from API controllers.
 
 Responsibilities include:
 
-* validation
-* orchestration
-* transaction management
+* Validation
+* Document orchestration
 * AI integration
-* retry logic
+* Transaction management
+* Retry logic
+* Error handling
 
 ---
 
 ## Asynchronous Processing
 
-Long-running AI tasks execute in background workers.
+Long-running AI operations execute in Celery workers.
 
 Advantages:
 
-* improved response time
-* scalability
-* fault isolation
-* retry capability
+* Improved response times
+* Better scalability
+* Fault isolation
+* Background retries
 
 ---
 
@@ -333,7 +453,7 @@ Retry operations use:
 * `select_for_update()`
 * `transaction.on_commit()`
 
-to ensure only one retry request can queue processing for a document at a time.
+to ensure that only one retry request can queue processing for a document at a time.
 
 ---
 
@@ -343,63 +463,65 @@ Processing failures are recorded without crashing the application.
 
 Each failed execution stores:
 
-* status
-* error message
-* execution duration
+* Status
+* Error message
+* Processing duration
 
-Users can retry failed jobs without re-uploading files.
+Failed documents remain available for retry without requiring another upload.
 
 ---
 
 # Security
 
-* JWT authentication
+The platform includes several security mechanisms:
+
+* JWT Authentication
 * User-specific document ownership
 * Protected API endpoints
-* Database transaction safety
-* Row-level locking during retries
+* Transaction-safe retry operations
+* Row-level locking
+* Background task isolation
+
+---
+
+# Engineering Highlights
+
+This project demonstrates several backend engineering concepts commonly used in production systems.
+
+* RESTful API Design
+* Layered Architecture
+* Repository Pattern
+* Service Layer Pattern
+* Dependency Injection
+* JWT Authentication
+* Celery Background Processing
+* Redis Message Broker
+* PostgreSQL
+* Docker Compose
+* Transaction Management
+* Row-Level Locking
+* Asynchronous Processing
+* Retry Mechanisms
+* AI Integration
+* Search and Filtering
+* Pagination
+* Automated Testing
+* Clean Architecture
+* Separation of Concerns
 
 ---
 
 # Future Improvements
 
-* Docker Compose support
-* PostgreSQL migration
-* OpenAPI / Swagger documentation
-* Automated testing
-* CI/CD pipeline
+Potential future enhancements include:
+
+* Amazon S3 document storage
 * Kubernetes deployment
-* S3 document storage
-* Multi-provider LLM support
-* Prompt versioning
-* Token usage tracking
-* Cost analytics
-* WebSocket processing notifications
-* Document versioning
+* Retrieval-Augmented Generation (RAG)
+* Vector database integration
+* Multi-model AI support
+* OCR provider abstraction
 
----
-
-# Key Engineering Concepts Demonstrated
-
-* RESTful API Design
-* Repository Pattern
-* Service Layer Pattern
-* Dependency Injection
-* Background Job Processing
-* Event-Driven Architecture
-* Transaction Management
-* Row-Level Locking
-* Asynchronous Processing
-* AI Integration
-* Retry Mechanisms
-* Error Recovery
-* Search and Filtering
-* Pagination
-* JWT Authentication
-* Clean Architecture
-* Separation of Concerns
-
----
 
 # License
 
