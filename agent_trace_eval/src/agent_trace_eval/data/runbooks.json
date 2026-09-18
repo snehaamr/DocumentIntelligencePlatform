@@ -1,0 +1,104 @@
+[
+  {
+    "id": "RB-NSF",
+    "reason_codes": ["insufficient_funds"],
+    "title": "Insufficient funds (NSF)",
+    "body": "If the ledger shows balance_recovered=true, retry the payment once. Otherwise acknowledge the exception and take no capture/refund action.",
+    "rules": [
+      {"when": {"reason_code": "insufficient_funds", "balance_recovered": true, "status": "failed"}, "action": "retry"},
+      {"when": {"reason_code": "insufficient_funds", "balance_recovered": false}, "action": "acknowledge"}
+    ],
+    "default_action": "acknowledge"
+  },
+  {
+    "id": "RB-EXPIRED",
+    "reason_codes": ["card_expired"],
+    "title": "Expired card",
+    "body": "Do not retry an expired card. Escalate so the customer can update credentials.",
+    "rules": [{"when": {"reason_code": "card_expired"}, "action": "escalate"}],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-TIMEOUT",
+    "reason_codes": ["network_timeout"],
+    "title": "Acquirer network timeout",
+    "body": "Retry once if retry_exhausted is false. If retries are exhausted, escalate to ops.",
+    "rules": [
+      {"when": {"reason_code": "network_timeout", "retry_exhausted": false}, "action": "retry"},
+      {"when": {"reason_code": "network_timeout", "retry_exhausted": true}, "action": "escalate"}
+    ],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-FRAUD",
+    "reason_codes": ["fraud_suspected"],
+    "title": "Fraud hold",
+    "body": "Never retry or refund. Escalate to the risk queue at high severity.",
+    "rules": [{"when": {"reason_code": "fraud_suspected"}, "action": "escalate"}],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-MERCHANT",
+    "reason_codes": ["merchant_decline"],
+    "title": "Merchant decline",
+    "body": "Hard decline from the merchant. Do not retry. Acknowledge and leave for merchant follow-up.",
+    "rules": [{"when": {"reason_code": "merchant_decline"}, "action": "acknowledge"}],
+    "default_action": "acknowledge"
+  },
+  {
+    "id": "RB-PROCESSING",
+    "reason_codes": ["processing"],
+    "title": "Payment still processing",
+    "body": "Do not retry, refund, or acknowledge. Take no_action until the processor settles.",
+    "rules": [{"when": {"status": "processing"}, "action": "no_action"}],
+    "default_action": "no_action"
+  },
+  {
+    "id": "RB-REFUND",
+    "reason_codes": ["succeeded", "refund"],
+    "title": "Captured payment refunds",
+    "body": "Refund only captured/succeeded payments and only up to amount_cents. Over-refunds are blocked by guardrail; then take no_action.",
+    "rules": [{"when": {"status": "succeeded", "captured": true}, "action": "no_action"}],
+    "default_action": "no_action"
+  },
+  {
+    "id": "RB-3DS",
+    "reason_codes": ["3ds_timeout"],
+    "title": "3-D Secure timeout",
+    "body": "The challenge timed out before capture. Safe to retry once.",
+    "rules": [{"when": {"reason_code": "3ds_timeout", "retry_exhausted": false}, "action": "retry"}],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-FX",
+    "reason_codes": ["currency_mismatch"],
+    "title": "Currency mismatch",
+    "body": "Ledger currency disagrees with the acquirer. Escalate; do not retry or refund.",
+    "rules": [{"when": {"reason_code": "currency_mismatch"}, "action": "escalate"}],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-HOLIDAY",
+    "reason_codes": ["bank_holiday"],
+    "title": "Issuing bank holiday",
+    "body": "Settlement delayed. Acknowledge the exception. Do not retry the same day.",
+    "rules": [{"when": {"reason_code": "bank_holiday"}, "action": "acknowledge"}],
+    "default_action": "acknowledge"
+  },
+  {
+    "id": "RB-CHARGEBACK",
+    "reason_codes": ["chargeback"],
+    "title": "Open chargeback",
+    "body": "Chargeback is in flight. Escalate to risk. Do not refund out-of-band.",
+    "rules": [{"when": {"reason_code": "chargeback"}, "action": "escalate"}, {"when": {"status": "chargeback_open"}, "action": "escalate"}],
+    "default_action": "escalate"
+  },
+  {
+    "id": "RB-DUP",
+    "reason_codes": ["duplicate_payment"],
+    "title": "Duplicate payment attempt",
+    "body": "A second authorization failed as duplicate. Acknowledge; do not retry. Refund only the extra captured duplicate (not this failed one).",
+    "rules": [{"when": {"reason_code": "duplicate_payment", "captured": false}, "action": "acknowledge"}],
+    "default_action": "acknowledge"
+  }
+]

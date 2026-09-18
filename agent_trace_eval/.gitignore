@@ -1,0 +1,8 @@
+# pytest / local
+.pytest_cache/
+.venv/
+*.egg-info/
+__pycache__/
+reports/spans.json
+reports/trace.html
+reports/latest.json

@@ -1,0 +1,23 @@
+name: agent-eval-gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent_trace_eval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install harness
+        run: pip install -e ".[dev]"
+      - name: Pytest quality/cost gate
+        run: pytest -q
+      - name: Write scored report
+        run: python -m agent_trace_eval run --out reports

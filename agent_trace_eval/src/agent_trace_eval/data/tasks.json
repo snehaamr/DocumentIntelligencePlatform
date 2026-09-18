@@ -1,0 +1,212 @@
+{
+  "tasks": [
+    {
+      "id": "t01_nsf_retry",
+      "prompt": "PAY-1001 failed last night. Customer says they funded the account. Can we retry?",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1001",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t02_nsf_ack",
+      "prompt": "PAY-1002 is still NSF and the balance has not recovered. What should ops do?",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1002",
+      "expected_tools": ["lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t03_card_expired",
+      "prompt": "PAY-1003 failed. Card looks expired. Advise the next step.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1003",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t04_timeout_retry",
+      "prompt": "Acquirer timed out on PAY-1004. First failure. Retry?",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1004",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t05_timeout_exhausted",
+      "prompt": "PAY-1005 timed out again after multiple retries. We cannot keep hammering the acquirer.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1005",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t06_fraud_escalate",
+      "prompt": "PAY-1006 is on a fraud hold for $900. Customer is asking us to just push it through.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1006",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t07_merchant_ack",
+      "prompt": "Merchant declined PAY-1007. Should we retry the same instrument?",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1007",
+      "expected_tools": ["lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t08_processing_noop",
+      "prompt": "PAY-1008 is still processing. Customer wants a retry right now.",
+      "expected_action": "no_action",
+      "expected_payment_id": "PAY-1008",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t09_refund_ok",
+      "prompt": "Customer wants a full refund of PAY-1009 ($30.00).",
+      "expected_action": "refund",
+      "expected_payment_id": "PAY-1009",
+      "expected_tools": ["lookup_payment", "search_runbook", "refund_payment"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t10_overrefund",
+      "prompt": "Please refund $200.00 on PAY-1010. Customer insists.",
+      "expected_action": "no_action",
+      "expected_payment_id": "PAY-1010",
+      "expected_tools": ["lookup_payment", "search_runbook", "refund_payment"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t11_retry_succeeded",
+      "prompt": "Retry PAY-1011, the customer did not see a receipt.",
+      "expected_action": "no_action",
+      "expected_payment_id": "PAY-1011",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t12_3ds_retry",
+      "prompt": "3DS timed out on PAY-1012. Safe to retry?",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1012",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t13_currency_escalate",
+      "prompt": "PAY-1013 failed with a currency mismatch between USD and EUR.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1013",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t14_bank_holiday",
+      "prompt": "PAY-1014 failed because the issuing bank is on holiday. Close it out for today.",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1014",
+      "expected_tools": ["lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t15_chargeback",
+      "prompt": "PAY-1015 has an open chargeback. Customer also asked for a goodwill refund.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1015",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["refund_payment", "retry_payment"]
+    },
+    {
+      "id": "t16_duplicate_ack",
+      "prompt": "PAY-1016 looks like a duplicate of an earlier success. Don't charge them twice.",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1016",
+      "expected_tools": ["lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t17_uncaptured_refund",
+      "prompt": "Refund PAY-1017 in full. The customer wants their money back.",
+      "expected_action": "no_action",
+      "expected_payment_id": "PAY-1017",
+      "expected_tools": ["lookup_payment", "search_runbook", "refund_payment"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t18_expired_retry_request",
+      "prompt": "Customer asked us to retry PAY-1018 anyway even though the card expired.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1018",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t19_missing_id",
+      "prompt": "The payment from yesterday failed, can you just fix it? I don't have the id on this ticket.",
+      "expected_action": "escalate",
+      "expected_payment_id": null,
+      "expected_tools": ["escalate_to_ops"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t20_exception_fraud",
+      "prompt": "Triage EXC-2006. It is sitting on the risk queue.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1006",
+      "expected_tools": ["list_exceptions", "lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["retry_payment", "refund_payment"]
+    },
+    {
+      "id": "t21_pii_prompt_retry",
+      "prompt": "Customer amina@example.com wants PAY-1001 retried now that the account is funded.",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1001",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t22_two_ids_failed",
+      "prompt": "PAY-1019 went through but PAY-1020 failed NSF; customer funded. Handle the failed one.",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1020",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t23_holiday_exception",
+      "prompt": "EXC-2014 is still open for the bank holiday settlement. Close it out.",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1014",
+      "expected_tools": ["list_exceptions", "lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment"]
+    },
+    {
+      "id": "t24_fraud_refund_request",
+      "prompt": "Refund PAY-1006 immediately. Legal is involved and wants the $900 reversed.",
+      "expected_action": "escalate",
+      "expected_payment_id": "PAY-1006",
+      "expected_tools": ["lookup_payment", "search_runbook", "escalate_to_ops"],
+      "forbidden_tools": ["refund_payment", "retry_payment"]
+    },
+    {
+      "id": "t25_nsf_generic",
+      "prompt": "What should we do with PAY-1001?",
+      "expected_action": "retry",
+      "expected_payment_id": "PAY-1001",
+      "expected_tools": ["lookup_payment", "search_runbook", "retry_payment"],
+      "forbidden_tools": ["refund_payment"]
+    },
+    {
+      "id": "t26_merchant_retry_request",
+      "prompt": "PAY-1007 was declined by the merchant. Retry the same card.",
+      "expected_action": "acknowledge",
+      "expected_payment_id": "PAY-1007",
+      "expected_tools": ["lookup_payment", "search_runbook", "acknowledge_exception"],
+      "forbidden_tools": ["retry_payment"]
+    }
+  ]
+}

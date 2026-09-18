@@ -484,6 +484,16 @@ The platform includes several security mechanisms:
 
 ---
 
+# Agent eval gate (`agent-trace-eval`)
+
+A self-contained harness lives in [`agent_trace_eval/`](agent_trace_eval/README.md). It runs a FastPay payment-exception copilot on 26 labeled tasks, emits OpenTelemetry GenAI spans (LLM, tool, retrieval, guardrail), and fails CI when success rate or `$ / task` regresses. Tools are a fake ledger — no live SaaS, no LangChain.
+
+```bash
+cd agent_trace_eval && pip install -e ".[dev]" && pytest -q
+```
+
+---
+
 # Engineering Highlights
 
 This project demonstrates several backend engineering concepts commonly used in production systems.
